@@ -11,7 +11,7 @@ const teamMembers = [
 
 export default function TeamsPage() {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pr-4">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Teams</h1>

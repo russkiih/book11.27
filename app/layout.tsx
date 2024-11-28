@@ -1,10 +1,13 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { metadata } from './metadata'
+import { Toaster } from "@/components/ui/toaster"
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' })
+const inter = Inter({ subsets: ['latin'] })
 
-export { metadata }
+export const metadata = {
+  title: 'Your App',
+  description: 'Your app description',
+}
 
 export default function RootLayout({
   children,
@@ -12,9 +15,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="antialiased">
+    <html lang="en">
+      <body className={inter.className}>
         {children}
+        <Toaster />
       </body>
     </html>
   )

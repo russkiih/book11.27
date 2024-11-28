@@ -53,7 +53,7 @@ export default function BookingsPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pr-4">
       <div className="mb-4">
         <h1 className="text-2xl font-semibold">Bookings</h1>
         <p className="text-sm text-muted-foreground">

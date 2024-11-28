@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Copy, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
-import { ServiceForm, ServiceFormData } from './features/service-form'
+import { ServiceForm, type ServiceFormData } from './features/service-form'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -157,7 +157,7 @@ export default function ServicesPage() {
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pr-4">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Services</h1>
@@ -230,12 +230,8 @@ export default function ServicesPage() {
             <div className="text-center">
               <h3 className="mt-2 text-sm font-semibold">No services</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Get started by creating a new service.
+                Get started by creating a new service using the button above.
               </p>
-              <Button className="mt-4" href="/services/new">
-                <Plus className="mr-2 h-4 w-4" />
-                New Service
-              </Button>
             </div>
           </div>
         )}

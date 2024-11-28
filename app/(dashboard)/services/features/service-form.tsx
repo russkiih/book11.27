@@ -59,7 +59,7 @@ export function ServiceForm({ isOpen, onClose, onSubmit, initialData, title }: S
               id="duration"
               type="number"
               value={formData.duration}
-              onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, duration: Number.parseInt(e.target.value) })}
               required
             />
           </div>
@@ -69,7 +69,7 @@ export function ServiceForm({ isOpen, onClose, onSubmit, initialData, title }: S
               id="price"
               type="number"
               value={formData.price}
-              onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+              onChange={(e) => setFormData({ ...formData, price: Number.parseInt(e.target.value) })}
               required
             />
           </div>

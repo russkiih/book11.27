@@ -31,7 +31,7 @@ const metrics = [
 
 export default function InsightsPage() {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pr-4">
       <div className="mb-4">
         <h1 className="text-2xl font-semibold">Insights</h1>
         <p className="text-sm text-muted-foreground">

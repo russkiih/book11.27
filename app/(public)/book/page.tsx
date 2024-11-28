@@ -1,6 +1,6 @@
 'use client'
 
-import * as React from 'react'
+import type * as React from 'react'
 import { Calendar, Clock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -142,6 +142,7 @@ export default function BookPage() {
                 {services.map((service) => (
                   <button
                     key={service.id}
+                    type="button"
                     onClick={() => setSelectedService(service)}
                     className={`w-full rounded-lg border p-4 text-left transition-colors ${
                       selectedService?.id === service.id
@@ -213,6 +214,7 @@ export default function BookPage() {
                       <h3 className="mb-4 font-medium">Your Information</h3>
                       <form className="space-y-4" onSubmit={handleSubmit}>
                         <div>
+                          {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
                           <label className="mb-2 block text-sm">Name</label>
                           <input
                             type="text"
@@ -225,6 +227,7 @@ export default function BookPage() {
                           />
                         </div>
                         <div>
+                          {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
                           <label className="mb-2 block text-sm">Email</label>
                           <input
                             type="email"
@@ -237,6 +240,7 @@ export default function BookPage() {
                           />
                         </div>
                         <div>
+                          {/* biome-ignore lint/a11y/noLabelWithoutControl: <explanation> */}
                           <label className="mb-2 block text-sm">Notes</label>
                           <textarea
                             name="notes"
