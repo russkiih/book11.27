@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Copy, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/lib/supabase'
-import { ServiceForm, ServiceFormData } from '../../../components/features/service-form'
+import { ServiceForm, ServiceFormData } from './features/service-form'
 import {
   AlertDialog,
   AlertDialogAction,

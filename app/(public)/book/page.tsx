@@ -46,6 +46,7 @@ export default function BookPage() {
     email: '',
     notes: ''
   })
+  const [bookingSuccess, setBookingSuccess] = useState(false)
 
   // Fetch services from Supabase
   useEffect(() => {
@@ -102,11 +103,10 @@ export default function BookPage() {
 
       if (error) throw error
 
+      setBookingSuccess(true)
       toast.success('Booking submitted successfully!')
-      // Reset form
-      setSelectedService(null)
-      setSelectedDate('')
-      setSelectedTime('')
+      
+      // Only clear the form data, keep the service and timing selections
       setFormData({
         name: '',
         email: '',
@@ -168,34 +168,7 @@ export default function BookPage() {
           {/* Right Column - Booking Summary */}
           <div>
             <div className="space-y-2">
-              {/* Booking Summary Card */}
-              <div className="rounded-lg border bg-card p-6">
-                <h3 className="mb-4 font-medium">Booking Summary</h3>
-                {selectedService ? (
-                  <div className="space-y-4">
-                    <div>
-                      <div className="font-medium">{selectedService.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {selectedService.description}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-muted-foreground" />
-                      <span>{selectedService.duration} min</span>
-                    </div>
-                    {selectedDate && selectedTime && (
-                      <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-muted-foreground" />
-                        <span>{selectedDate} at {selectedTime}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Select a service to see the summary
-                  </p>
-                )}
-              </div>
+              
 
               {/* Date/Time/Form Section */}
               {selectedService && (
@@ -285,6 +258,48 @@ export default function BookPage() {
                   )}
                 </>
               )}
+              {/* Booking Summary Card */}
+              <div className={`rounded-lg border bg-card p-6 transition-colors ${
+                bookingSuccess ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''
+              }`}>
+                <h3 className={`mb-4 font-medium ${
+                  bookingSuccess ? 'text-green-700 dark:text-green-300' : ''
+                }`}>
+                  {bookingSuccess ? 'Booking Confirmed!' : 'Booking Summary'}
+                </h3>
+                {selectedService ? (
+                  <div className="space-y-4">
+                    <div>
+                      <div className={`font-medium ${
+                        bookingSuccess ? 'text-green-700 dark:text-green-300' : ''
+                      }`}>
+                        {selectedService.name}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {selectedService.description}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Clock className={`h-5 w-5 ${
+                        bookingSuccess ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                      }`} />
+                      <span>{selectedService.duration} min</span>
+                    </div>
+                    {selectedDate && selectedTime && (
+                      <div className="flex items-center gap-3">
+                        <Calendar className={`h-5 w-5 ${
+                          bookingSuccess ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
+                        }`} />
+                        <span>{selectedDate} at {selectedTime}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Select a service to see the summary
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
