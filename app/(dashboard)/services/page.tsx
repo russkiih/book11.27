@@ -1,155 +1,183 @@
 'use client'
 
-import * as React from 'react'
-import { useState, useEffect } from 'react'
-import { Plus, Copy, Pencil, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { supabase } from '@/lib/supabase'
-import { ServiceForm, type ServiceFormData } from './features/service-form'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { useState, useEffect, useCallback } from 'react'
+import { Plus, Pencil, Trash2, ExternalLink, Copy } from 'lucide-react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { toast } from 'sonner'
+import type { Database } from '@/types/supabase'
+import Link from 'next/link'
 
 interface Service {
   id: string
   name: string
+  description: string | null
   duration: number
   price: number
-  description: string
+  user_id: string
 }
 
 export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
-  const [isNewServiceModalOpen, setIsNewServiceModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  const [editingService, setEditingService] = useState<Service | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    duration: 30,
+    price: 0
+  })
+  const [username, setUsername] = useState<string | null>(null)
 
-  // Fetch services from Supabase
-  useEffect(() => {
-    fetchServices()
-  }, [])
+  const supabase = createClientComponentClient<Database>()
 
-  const fetchServices = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single()
+
+      if (error) throw error
+      setUsername(profile?.username)
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
+  }, [supabase])
+
+  const fetchServices = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
       const { data, error } = await supabase
         .from('services')
         .select('*')
+        .eq('user_id', user.id)
         .order('name')
 
-      if (error) {
-        throw error
-      }
-
+      if (error) throw error
       setServices(data || [])
     } catch (error) {
       console.error('Error fetching services:', error)
+      toast.error('Failed to load services')
+    } finally {
+      setLoading(false)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchServices()
+    fetchUserProfile()
+  }, [fetchServices, fetchUserProfile])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const serviceData = {
+        ...formData,
+        user_id: user.id
+      }
+
+      if (editingService) {
+        // Update existing service
+        const { error: updateError } = await supabase
+          .from('services')
+          .update(serviceData)
+          .eq('id', editingService.id)
+          .eq('user_id', user.id)
+
+        if (updateError) throw updateError
+      } else {
+        // Create new service
+        const { error: insertError } = await supabase
+          .from('services')
+          .insert([serviceData])
+
+        if (insertError) throw insertError
+      }
+
+      toast.success(editingService ? 'Service updated' : 'Service created')
+      setIsModalOpen(false)
+      setEditingService(null)
+      setFormData({ name: '', description: '', duration: 30, price: 0 })
+      fetchServices()
+    } catch (error) {
+      console.error('Error saving service:', error)
+      toast.error('Failed to save service')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleCopyService = async (service: Service) => {
+  const handleDelete = async (serviceId: string) => {
+    if (!confirm('Are you sure you want to delete this service?')) return
+
     try {
-      const newService = {
-        name: `${service.name} (Copy)`,
-        duration: service.duration,
-        price: service.price,
-        description: service.description
-      }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
 
-      const { data, error } = await supabase
-        .from('services')
-        .insert([newService])
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setServices([...services, data])
-    } catch (error) {
-      console.error('Error copying service:', error)
-    }
-  }
-
-  const handleDeleteService = async (id: string) => {
-    try {
       const { error } = await supabase
         .from('services')
         .delete()
-        .eq('id', id)
+        .eq('id', serviceId)
+        .eq('user_id', user.id)
 
       if (error) throw error
 
-      setServices(services.filter(service => service.id !== id))
+      toast.success('Service deleted')
+      fetchServices()
     } catch (error) {
       console.error('Error deleting service:', error)
+      toast.error('Failed to delete service')
     }
   }
 
-  const handleCreateService = async (data: ServiceFormData) => {
+  const handleEdit = (service: Service) => {
+    setEditingService(service)
+    setFormData({
+      name: service.name,
+      description: service.description || '',
+      duration: service.duration,
+      price: service.price
+    })
+    setIsModalOpen(true)
+  }
+
+  const handleCopy = async (service: Service) => {
     try {
-      const { data: newService, error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const serviceCopy = {
+        name: `${service.name} (Copy)`,
+        description: service.description,
+        duration: service.duration,
+        price: service.price,
+        user_id: user.id
+      }
+
+      const { error: insertError } = await supabase
         .from('services')
-        .insert([data])
-        .select()
-        .single()
+        .insert([serviceCopy])
 
-      if (error) throw error
+      if (insertError) throw insertError
 
-      setServices([...services, newService])
-      setIsNewServiceModalOpen(false)
+      toast.success('Service copied')
+      fetchServices()
     } catch (error) {
-      console.error('Error creating service:', error)
+      console.error('Error copying service:', error)
+      toast.error('Failed to copy service')
     }
-  }
-
-  const handleEditService = async (data: ServiceFormData) => {
-    if (!selectedService) return
-
-    try {
-      const { data: updatedService, error } = await supabase
-        .from('services')
-        .update(data)
-        .eq('id', selectedService.id)
-        .select()
-        .single()
-
-      if (error) throw error
-
-      setServices(services.map(service => 
-        service.id === selectedService.id ? updatedService : service
-      ))
-      setIsEditModalOpen(false)
-      setSelectedService(null)
-    } catch (error) {
-      console.error('Error updating service:', error)
-    }
-  }
-
-  const openEditModal = (service: Service) => {
-    setSelectedService(service)
-    setIsEditModalOpen(true)
-  }
-
-  const openDeleteDialog = (service: Service) => {
-    setSelectedService(service)
-    setIsDeleteDialogOpen(true)
-  }
-
-  const handleDeleteConfirm = async () => {
-    if (!selectedService) return
-    await handleDeleteService(selectedService.id)
-    setIsDeleteDialogOpen(false)
-    setSelectedService(null)
   }
 
   if (loading) {
@@ -162,118 +190,161 @@ export default function ServicesPage() {
         <div>
           <h1 className="text-2xl font-semibold">Services</h1>
           <p className="text-sm text-muted-foreground">
-            Manage the services you offer to your customers
+            Manage your available services
           </p>
         </div>
-        <Button onClick={() => setIsNewServiceModalOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Service
-        </Button>
+        <div className="flex items-center gap-4">
+          {username && (
+            <Link
+              href={`/${username}/book`}
+              target="_blank"
+              className="flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/90"
+            >
+              <ExternalLink className="h-4 w-4" />
+              View Public Page
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setEditingService(null)
+              setFormData({ name: '', description: '', duration: 30, price: 0 })
+              setIsModalOpen(true)
+            }}
+            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            Add Service
+          </button>
+        </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
-        <table className="w-full">
-          <thead className="border-b bg-muted/50">
-            <tr>
-              <th className="py-3 pl-4 text-left text-sm font-medium">Name</th>
-              <th className="py-3 text-left text-sm font-medium">Duration</th>
-              <th className="py-3 text-left text-sm font-medium">Price</th>
-              <th className="py-3 pr-4 text-right text-sm font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {services.map((service) => (
-              <tr key={service.id} className="border-b last:border-0">
-                <td className="py-3 pl-4">
-                  <div>
-                    <div className="font-medium">{service.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {service.description}
-                    </div>
-                  </div>
-                </td>
-                <td className="py-3">{service.duration} min</td>
-                <td className="py-3">
-                  {service.price === 0 ? 'Free' : `$${service.price}`}
-                </td>
-                <td className="py-3 pr-4">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleCopyService(service)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditModal(service)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openDeleteDialog(service)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {services.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-center">
-              <h3 className="mt-2 text-sm font-semibold">No services</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Get started by creating a new service using the button above.
+      {/* Services List */}
+      <div className="grid gap-4">
+        {services.map((service) => (
+          <div
+            key={service.id}
+            className="flex items-center justify-between rounded-lg border bg-card p-4"
+          >
+            <div>
+              <h3 className="font-medium">{service.name}</h3>
+              <p className="text-sm text-muted-foreground">
+                {service.description}
               </p>
+              <div className="mt-1 flex gap-4 text-sm text-muted-foreground">
+                <span>{service.duration} min</span>
+                <span>${service.price}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleCopy(service)}
+                className="rounded-md p-2 hover:bg-accent"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleEdit(service)}
+                className="rounded-md p-2 hover:bg-accent"
+              >
+                <Pencil className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(service.id)}
+                className="rounded-md p-2 text-destructive hover:bg-accent"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             </div>
           </div>
-        )}
+        ))}
       </div>
 
-      <ServiceForm
-        isOpen={isNewServiceModalOpen}
-        onClose={() => setIsNewServiceModalOpen(false)}
-        onSubmit={handleCreateService}
-        title="Create New Service"
-      />
-
-      <ServiceForm
-        isOpen={isEditModalOpen}
-        onClose={() => {
-          setIsEditModalOpen(false)
-          setSelectedService(null)
-        }}
-        onSubmit={handleEditService}
-        initialData={selectedService || undefined}
-        title="Edit Service"
-      />
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the service
-              "{selectedService?.name}".
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedService(null)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80">
+          <div className="w-full max-w-md rounded-lg border bg-card p-6">
+            <h2 className="mb-4 text-lg font-semibold">
+              {editingService ? 'Edit Service' : 'Add Service'}
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium">
+                  Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="mt-1 block w-full rounded-md border bg-background px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="mt-1 block w-full rounded-md border bg-background px-3 py-2"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label htmlFor="duration" className="block text-sm font-medium">
+                  Duration (minutes)
+                </label>
+                <input
+                  id="duration"
+                  type="number"
+                  min="5"
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: Number.parseInt(e.target.value, 10) })}
+                  className="mt-1 block w-full rounded-md border bg-background px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium">
+                  Price ($)
+                </label>
+                <input
+                  id="price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: Number.parseFloat(e.target.value) })}
+                  className="mt-1 block w-full rounded-md border bg-background px-3 py-2"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-md px-4 py-2 text-sm font-medium hover:bg-accent"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {loading ? 'Saving...' : editingService ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
