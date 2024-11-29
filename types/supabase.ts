@@ -73,42 +73,42 @@ export interface Database {
       bookings: {
         Row: {
           id: string
-          service_id: string
+          created_at: string
           provider_id: string
+          service_id: string
           customer_name: string
           customer_email: string
-          booking_date: string
-          booking_time: string
+          booking_datetime: string
           notes: string | null
           status: string
-          created_at: string
-          updated_at: string
+          duration: number
+          price: number
         }
         Insert: {
           id?: string
-          service_id: string
+          created_at?: string
           provider_id: string
+          service_id: string
           customer_name: string
           customer_email: string
-          booking_date: string
-          booking_time: string
+          booking_datetime: string
           notes?: string | null
           status?: string
-          created_at?: string
-          updated_at?: string
+          duration: number
+          price: number
         }
         Update: {
           id?: string
-          service_id?: string
+          created_at?: string
           provider_id?: string
+          service_id?: string
           customer_name?: string
           customer_email?: string
-          booking_date?: string
-          booking_time?: string
+          booking_datetime?: string
           notes?: string | null
           status?: string
-          created_at?: string
-          updated_at?: string
+          duration?: number
+          price?: number
         }
       }
     }

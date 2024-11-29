@@ -5,16 +5,17 @@ import { TabNavigation } from '@/components/layout/TabNavigation'
 import { NotificationPrompt } from '@/components/features/NotificationPrompt'
 import { EmptyState } from '@/components/features/EmptyState'
 import { supabase } from '@/lib/supabase'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
 interface Booking {
-  id: number
+  id: string
   customer_name: string
   customer_email: string
-  booking_date: string
-  booking_time: string
-  notes: string
+  booking_datetime: string
+  notes: string | null
   status: string
+  duration: number
+  price: number
   service: {
     name: string
     duration: number
@@ -34,7 +35,7 @@ export default function BookingsPage() {
             *,
             service:services(name, duration)
           `)
-          .order('booking_date', { ascending: true })
+          .order('booking_datetime', { ascending: true })
 
         if (error) throw error
         setBookings(data || [])
@@ -75,15 +76,27 @@ export default function BookingsPage() {
                 <div>
                   <h3 className="font-medium">{booking.customer_name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {booking.service.name} - {booking.service.duration} min
+                    {booking.service.name} - {booking.duration} min
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {format(new Date(booking.booking_date), 'PPP')} at{' '}
-                    {booking.booking_time}
+                    {format(parseISO(booking.booking_datetime), 'PPP p')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    ${booking.price}
                   </p>
                 </div>
                 <div>
-                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                  <span 
+                    className={`rounded-full px-2 py-1 text-xs font-medium ${
+                      booking.status === 'pending' 
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : booking.status === 'confirmed'
+                        ? 'bg-green-100 text-green-800'
+                        : booking.status === 'cancelled'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-primary/10 text-primary'
+                    }`}
+                  >
                     {booking.status}
                   </span>
                 </div>
