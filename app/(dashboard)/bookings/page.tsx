@@ -1,10 +1,10 @@
 'use client'
 
 import * as React from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { TabNavigation } from '@/components/layout/TabNavigation'
 import { NotificationPrompt } from '@/components/features/NotificationPrompt'
 import { EmptyState } from '@/components/features/EmptyState'
-import { supabase } from '@/lib/supabase'
 import { format, parseISO } from 'date-fns'
 
 interface Booking {
@@ -16,41 +16,85 @@ interface Booking {
   status: string
   duration: number
   price: number
-  service: {
+  service_id: {
     name: string
     duration: number
-  }
+  } | null
 }
 
 export default function BookingsPage() {
   const [bookings, setBookings] = React.useState<Booking[]>([])
   const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const supabase = createClientComponentClient()
 
   React.useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const { data, error } = await supabase
+        setLoading(true)
+        setError(null)
+
+        const { data: sessionData, error: sessionError } = await supabase.auth.getUser()
+        
+        if (sessionError) {
+          throw new Error('Failed to get user session')
+        }
+
+        if (!sessionData.user) {
+          throw new Error('No user logged in')
+        }
+
+        const { data: bookingsData, error: bookingsError } = await supabase
           .from('bookings')
           .select(`
-            *,
-            service:services(name, duration)
+            id,
+            customer_name,
+            customer_email,
+            booking_datetime,
+            notes,
+            status,
+            duration,
+            price,
+            service_id: services (
+              name,
+              duration
+            )
           `)
+          .eq('provider_id', sessionData.user.id)
           .order('booking_datetime', { ascending: true })
 
-        if (error) throw error
-        setBookings(data || [])
-      } catch (error) {
-        console.error('Error fetching bookings:', error)
+        if (bookingsError) {
+          throw bookingsError
+        }
+
+        const transformedBookings = bookingsData?.map(booking => ({
+          ...booking,
+          services: booking.service_id?.[0] || null
+        }))
+
+        setBookings(transformedBookings)
+      } catch (err) {
+        console.error('Error fetching bookings:', err)
+        setError(err instanceof Error ? err.message : 'Failed to fetch bookings')
+        setBookings([])
       } finally {
         setLoading(false)
       }
     }
 
     fetchBookings()
-  }, [])
+  }, [supabase])
 
   if (loading) {
-    return <div>Loading...</div>
+    return <div className="flex items-center justify-center p-4">Loading...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-4 text-red-500">
+        Error: {error}
+      </div>
+    )
   }
 
   return (
@@ -76,16 +120,19 @@ export default function BookingsPage() {
                 <div>
                   <h3 className="font-medium">{booking.customer_name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {booking.service.name} - {booking.duration} min
+                    {booking.service_id?.name} - {booking.duration} min
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {format(parseISO(booking.booking_datetime), 'PPP p')}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    ${booking.price}
-                  </p>
+                  
+                  {booking.notes && (
+                    <p className="rounded-md border p-2 text-sm text-muted-foreground">
+                      {booking.notes}
+                    </p>
+                  )}
                 </div>
-                <div>
+                <div className="flex items-center gap-3">
                   <span 
                     className={`rounded-full px-2 py-1 text-xs font-medium ${
                       booking.status === 'pending' 
@@ -99,6 +146,9 @@ export default function BookingsPage() {
                   >
                     {booking.status}
                   </span>
+                  <span className="text-lg font-medium">
+                      ${booking.price}
+                    </span>
                 </div>
               </div>
             ))}
