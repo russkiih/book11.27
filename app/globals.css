@@ -1,3 +1,5 @@
+@import 'react-day-picker/dist/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -66,4 +68,26 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Customize the calendar styles */
+.rdp {
+  --rdp-cell-size: 40px;
+  --rdp-accent-color: hsl(var(--primary));
+  --rdp-background-color: hsl(var(--primary) / 0.1);
+  margin: 0;
+}
+
+.rdp-day_selected:not([disabled]) { 
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.rdp-day_selected:hover:not([disabled]) {
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.rdp-day:hover:not([disabled]) {
+  background-color: hsl(var(--primary) / 0.1);
 }

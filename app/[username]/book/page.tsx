@@ -23,11 +23,57 @@ export default async function BookPage({ params }: { params: { username: string 
     )
   }
 
-  const { data: servicesData } = await supabase
-    .from('services')
-    .select('*')
-    .eq('user_id', userData.id)
-    .order('name')
+  // Fetch services and availability
+  const [
+    { data: servicesData },
+    { data: weekdayData },
+    { data: hoursData }
+  ] = await Promise.all([
+    supabase
+      .from('services')
+      .select('*')
+      .eq('user_id', userData.id)
+      .order('name'),
+    supabase
+      .from('weekday_availability')
+      .select('weekdays')
+      .eq('user_id', userData.id)
+      .single(),
+    supabase
+      .from('hours_availability')
+      .select('hours')
+      .eq('user_id', userData.id)
+      .single()
+  ])
 
-  return <BookingForm initialServices={servicesData || []} provider={userData} />
+  if (!servicesData?.length) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">No Services Available</h1>
+          <p className="mt-2 text-gray-600">This provider hasn't set up any services yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!weekdayData?.weekdays?.length || !hoursData?.hours?.length) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">No Availability Set</h1>
+          <p className="mt-2 text-gray-600">This provider hasn't set their availability yet.</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <BookingForm 
+      initialServices={servicesData} 
+      provider={userData}
+      availableWeekdays={weekdayData.weekdays}
+      availableHours={hoursData.hours}
+    />
+  )
 } 

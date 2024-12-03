@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useToast } from '@/components/ui/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
@@ -10,26 +10,74 @@ const HOURS = Array.from({ length: 24 }, (_, i) => ({
 }))
 
 export function HoursAvailability() {
-  const [availableHours, setAvailableHours] = useState<number[]>(
-    Array.from({ length: 9 }, (_, i) => i + 9) // Default 9am-5pm (9-17)
-  )
+  const [availableHours, setAvailableHours] = useState<number[]>([])
   const { toast } = useToast()
   const supabase = createClientComponentClient()
 
+  useEffect(() => {
+    const fetchHours = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      const { data, error } = await supabase
+        .from('hours_availability')
+        .select('hours')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error) {
+        // If no record exists, create one with default hours
+        const defaultHours = Array.from({ length: 9 }, (_, i) => i + 9)
+        await supabase
+          .from('hours_availability')
+          .insert({ user_id: user.id, hours: defaultHours })
+        setAvailableHours(defaultHours)
+      } else {
+        setAvailableHours(data.hours)
+      }
+    }
+
+    fetchHours()
+  }, [supabase])
+
   const toggleHour = async (hourId: number) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
       const newAvailableHours = availableHours.includes(hourId)
         ? availableHours.filter(id => id !== hourId)
         : [...availableHours, hourId].sort((a, b) => a - b)
       
       setAvailableHours(newAvailableHours)
       
-      // We'll implement the Supabase update later
+      // First try to update
+      let { error } = await supabase
+        .from('hours_availability')
+        .update({ 
+          hours: newAvailableHours,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+
+      // If no rows were affected, insert instead
+      if (error?.code === 'PGRST116') {
+        ({ error } = await supabase
+          .from('hours_availability')
+          .insert({ 
+            user_id: user.id, 
+            hours: newAvailableHours
+          }))
+      }
+
+      if (error) throw error
+
       toast({
         title: "Hours updated",
         description: "Your available hours have been saved."
       })
     } catch (error) {
+      console.error('Error updating hours:', error)
       toast({
         title: "Error",
         description: "Failed to update hours.",

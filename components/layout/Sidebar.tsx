@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { ViewPublicPageButton } from './ViewPublicPageButton'
 
 const navigation = [
   { name: 'Bookings', href: '/bookings', icon: Calendar },
@@ -55,6 +56,9 @@ export function Sidebar() {
           )
         })}
       </nav>
+      <div className="mt-auto p-4 border-t">
+        <ViewPublicPageButton />
+      </div>
     </div>
   )
 } 

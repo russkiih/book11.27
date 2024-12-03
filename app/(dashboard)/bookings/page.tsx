@@ -11,12 +11,13 @@ interface Booking {
   id: string
   customer_name: string
   customer_email: string
+  phone_number: string
   booking_datetime: string
   notes: string | null
   status: string
   duration: number
   price: number
-  service_id: {
+  services: {
     name: string
     duration: number
   } | null
@@ -50,12 +51,13 @@ export default function BookingsPage() {
             id,
             customer_name,
             customer_email,
+            phone_number, 
             booking_datetime,
             notes,
             status,
             duration,
             price,
-            service_id: services (
+            services: services (
               name,
               duration
             )
@@ -69,10 +71,10 @@ export default function BookingsPage() {
 
         const transformedBookings = bookingsData?.map(booking => ({
           ...booking,
-          services: booking.service_id?.[0] || null
+          services: booking.services || null
         }))
 
-        setBookings(transformedBookings)
+        setBookings(transformedBookings as unknown as Booking[])
       } catch (err) {
         console.error('Error fetching bookings:', err)
         setError(err instanceof Error ? err.message : 'Failed to fetch bookings')
@@ -111,19 +113,22 @@ export default function BookingsPage() {
         {bookings.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="rounded-md border">
+          <div className="flex flex-col gap-4">
             {bookings.map((booking) => (
               <div
                 key={booking.id}
-                className="flex items-center justify-between border-b p-4 last:border-0"
+                className="flex items-center justify-between rounded-md border p-4"
               >
                 <div>
                   <h3 className="font-medium">{booking.customer_name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    {booking.service_id?.name} - {booking.duration} min
+                    {booking.services?.name} - {booking.duration} min
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {format(parseISO(booking.booking_datetime), 'PPP p')}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    📞 {booking.phone_number}
                   </p>
                   
                   {booking.notes && (
@@ -132,7 +137,10 @@ export default function BookingsPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center gap-2 text-green-600">
+                  <span className="text-lg font-medium">
+                    ${booking.price}
+                  </span>
                   <span 
                     className={`rounded-full px-2 py-1 text-xs font-medium ${
                       booking.status === 'pending' 
@@ -146,9 +154,6 @@ export default function BookingsPage() {
                   >
                     {booking.status}
                   </span>
-                  <span className="text-lg font-medium">
-                      ${booking.price}
-                    </span>
                 </div>
               </div>
             ))}

@@ -193,30 +193,18 @@ export default function ServicesPage() {
             Manage your available services
           </p>
         </div>
-        <div className="flex items-center gap-4">
-          {username && (
-            <Link
-              href={`/${username}/book`}
-              target="_blank"
-              className="flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/90"
-            >
-              <ExternalLink className="h-4 w-4" />
-              View Public Page
-            </Link>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setEditingService(null)
-              setFormData({ name: '', description: '', duration: 30, price: 0 })
-              setIsModalOpen(true)
-            }}
-            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4" />
-            Add Service
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setEditingService(null)
+            setFormData({ name: '', description: '', duration: 30, price: 0 })
+            setIsModalOpen(true)
+          }}
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" />
+          Add Service
+        </button>
       </div>
 
       {/* Services List */}

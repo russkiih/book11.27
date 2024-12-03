@@ -6,6 +6,9 @@ import type { Database } from '@/types/supabase'
 import { Clock, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { BookingCalendar } from './components/BookingCalendar'
+import { format } from 'date-fns'
+import 'react-day-picker/dist/style.css'
 
 const timeSlots = [
   '9:00 AM',
@@ -36,22 +39,31 @@ interface BookingFormData {
   name: string
   email: string
   notes: string
+  phone: string
 }
 
 interface BookingFormProps {
   initialServices: Service[]
   provider: Provider
+  availableWeekdays: number[]
+  availableHours: number[]
 }
 
-export default function BookingForm({ initialServices, provider }: BookingFormProps) {
+export default function BookingForm({
+  initialServices,
+  provider,
+  availableWeekdays,
+  availableHours
+}: BookingFormProps) {
   const [services] = useState<Service[]>(initialServices)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
-  const [selectedDate, setSelectedDate] = useState('')
+  const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedTime, setSelectedTime] = useState('')
   const [formData, setFormData] = useState<BookingFormData>({
     name: '',
     email: '',
-    notes: ''
+    notes: '',
+    phone: ''
   })
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const router = useRouter()
@@ -67,6 +79,23 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
     }))
   }
 
+  const sendConfirmationEmail = async (bookingId: string) => {
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send confirmation email')
+      }
+    } catch (error) {
+      console.error('Email error:', error)
+      // Don't throw the error, just log it
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -76,8 +105,9 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
     }
 
     try {
-      const dateTime = new Date(`${selectedDate} ${selectedTime}`).toISOString()
+      const dateTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')} ${selectedTime}`).toISOString()
 
+      // First create the booking
       const { data: bookingData, error } = await supabase
         .from('bookings')
         .insert({
@@ -85,6 +115,7 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
           provider_id: provider.id,
           customer_name: formData.name,
           customer_email: formData.email,
+          phone_number: formData.phone,
           booking_datetime: dateTime,
           notes: formData.notes,
           status: 'pending',
@@ -96,17 +127,24 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
 
       if (error) throw error
 
-      setBookingSuccess(true)
-      toast.success('Booking submitted successfully!')
-      
-      // Reset form
-      setFormData({
-        name: '',
-        email: '',
-        notes: ''
-      })
+      if (bookingData) {
+        setBookingSuccess(true)
+        toast.success('Booking submitted successfully!')
+        
+        // Send email in the background
+        sendConfirmationEmail(bookingData.id)
+          .catch(console.error) // Handle any errors silently
+        
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          notes: '',
+          phone: ''
+        })
 
-      router.refresh()
+        router.refresh()
+      }
     } catch (error) {
       console.error('Error submitting booking:', error)
       toast.error('Failed to submit booking. Please try again.')
@@ -189,7 +227,7 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
                         <Calendar className={`h-5 w-5 ${
                           bookingSuccess ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
                         }`} />
-                        <span>{selectedDate} at {selectedTime}</span>
+                        <span>{format(selectedDate, 'PPP')} at {selectedTime}</span>
                       </div>
                     )}
                     {bookingSuccess && (
@@ -202,7 +240,7 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
                           onClick={() => {
                             setBookingSuccess(false)
                             setSelectedService(null)
-                            setSelectedDate('')
+                            setSelectedDate(undefined)
                             setSelectedTime('')
                           }}
                           className="mt-3 text-sm font-medium text-green-700 hover:text-green-600 dark:text-green-300 dark:hover:text-green-200"
@@ -222,33 +260,28 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
               {/* Date/Time Selection */}
               {!bookingSuccess && selectedService && (
                 <>
-                  <div className="rounded-lg border bg-card p-6">
-                    <h3 className="mb-4 font-medium">Select a Date</h3>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="w-full rounded-md border bg-background px-3 py-2"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                  </div>
+                  <BookingCalendar
+                    selectedDate={selectedDate}
+                    onSelect={setSelectedDate}
+                    availableWeekdays={availableWeekdays}
+                  />
 
                   {selectedDate && (
                     <div className="rounded-lg border bg-card p-6">
                       <h3 className="mb-4 font-medium">Select a Time</h3>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {timeSlots.map((time) => (
+                        {availableHours.map((hour) => (
                           <button
-                            key={time}
+                            key={hour}
                             type="button"
-                            onClick={() => setSelectedTime(time)}
+                            onClick={() => setSelectedTime(`${hour.toString().padStart(2, '0')}:00`)}
                             className={`rounded-md border px-4 py-2 text-sm ${
-                              selectedTime === time
+                              selectedTime === `${hour.toString().padStart(2, '0')}:00`
                                 ? 'border-primary bg-primary/10 text-primary'
                                 : 'hover:border-primary hover:bg-primary/5'
                             }`}
                           >
-                            {time}
+                            {format(new Date().setHours(hour, 0, 0, 0), 'h:mm a')}
                           </button>
                         ))}
                       </div>
@@ -286,6 +319,20 @@ export default function BookingForm({ initialServices, provider }: BookingFormPr
                             onChange={handleInputChange}
                             className="mt-1 w-full rounded-md border bg-background px-3 py-2"
                             required
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="phone" className="block text-sm font-medium">
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            id="phone"
+                            name="phone"
+                            required
+                            className="mt-1 w-full rounded-md border bg-background px-3 py-2"
+                            value={formData.phone}
+                            onChange={handleInputChange}
                           />
                         </div>
                         <div>

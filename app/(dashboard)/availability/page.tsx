@@ -38,7 +38,7 @@ export default function AvailabilityPage() {
           </div>
         </div>
         <div className="flex-1 rounded-lg border bg-card p-4">
-          <div className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-lg border bg-card p-4">
               <HoursAvailability />
             </div>
