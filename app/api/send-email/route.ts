@@ -29,9 +29,10 @@ export async function POST(request: Request) {
       react: BookingConfirmationEmail({
         customerName: booking.customer_name,
         serviceName: booking.services?.name || 'Service',
-        booking_datetime: booking.booking_datetime,
+        datetime: booking.booking_datetime,
         duration: booking.duration,
         price: booking.price,
+        providerName: booking.profiles?.username || 'Our Team',
       }),
     })
 

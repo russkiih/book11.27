@@ -6,9 +6,17 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import type { User } from '@supabase/supabase-js'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+
+interface Profile {
+  username: string
+  full_name: string
+  avatar_url: string | null
+}
 
 export function Header() {
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient()
@@ -17,6 +25,17 @@ export function Header() {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setUser(user)
+
+      if (user) {
+        // Fetch profile data
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username, full_name, avatar_url')
+          .eq('id', user.id)
+          .single()
+        
+        setProfile(profile)
+      }
     }
     getUser()
   }, [supabase])
@@ -29,14 +48,7 @@ export function Header() {
   return (
     <header className="flex h-14 items-center justify-between border-b px-4">
       <div className="flex items-center gap-4">
-        <div className="relative h-8 w-8 overflow-hidden rounded-full">
-          <Image
-            src="https://picsum.photos/32/32"
-            alt="Profile"
-            fill
-            className="object-cover"
-          />
-        </div>
+        
         <div className="relative w-64">
           <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -56,9 +68,12 @@ export function Header() {
             onClick={() => setShowDropdown(!showDropdown)}
             className="flex items-center gap-2 rounded-md p-2 hover:bg-accent"
           >
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              {user?.email?.[0].toUpperCase()}
-            </div>
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={profile?.avatar_url || ''} />
+              <AvatarFallback>
+                {profile?.full_name?.[0] || user?.email?.[0].toUpperCase() || '?'}
+              </AvatarFallback>
+            </Avatar>
           </button>
           {showDropdown && (
             <div className="absolute right-0 mt-2 w-48 rounded-md border bg-card shadow-lg">

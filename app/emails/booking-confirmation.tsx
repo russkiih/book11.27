@@ -12,24 +12,24 @@ import { format } from 'date-fns';
 interface BookingConfirmationEmailProps {
   customerName: string;
   serviceName: string;
-  booking_datetime: string;
+  datetime: string;
   duration: number;
-  provider_id: string;
+  providerName: string;
   price: number;
 }
 
 export const BookingConfirmationEmail = ({
   customerName,
   serviceName,
-  booking_datetime,
+  datetime,
   duration,
-  provider_id,
+  providerName,
   price,
 }: BookingConfirmationEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Booking Confirmation: {serviceName} with {provider_id}</Preview>
+      <Preview>Booking Confirmation: {serviceName} with {providerName}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={h1}>Booking Confirmation</Heading>
@@ -43,10 +43,10 @@ export const BookingConfirmationEmail = ({
               <span style={detailValue}>{serviceName}</span>
               <br />
               <strong style={detailLabel}>Provider:</strong>{' '}
-              <span style={detailValue}>{provider_id}</span>
+              <span style={detailValue}>{providerName}</span>
               <br />
               <strong style={detailLabel}>Date & Time:</strong>{' '}
-              <span style={detailValue}>{booking_datetime}</span>
+              <span style={detailValue}>{datetime}</span>
               <br />
               <strong style={detailLabel}>Duration:</strong>{' '}
               <span style={detailValue}>{duration} minutes</span>
@@ -64,7 +64,7 @@ export const BookingConfirmationEmail = ({
           <Text style={footer}>
             Best regards,
             <br />
-            {provider_id}
+            {providerName}
           </Text>
         </Container>
       </Body>

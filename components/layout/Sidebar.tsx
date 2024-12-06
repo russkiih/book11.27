@@ -20,11 +20,12 @@ const navigation = [
   { name: 'Bookings', href: '/bookings', icon: Calendar },
   { name: 'Services', href: '/services', icon: Scissors },
   { name: 'Availability', href: '/availability', icon: Clock },
+  { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Teams', href: '/teams', icon: Users },
   { name: 'Apps', href: '/apps', icon: Settings },
   { name: 'Routing Forms', href: '/routing-forms', icon: FileText },
   { name: 'Workflows', href: '/workflows', icon: Workflow },
-  { name: 'Insights', href: '/insights', icon: BarChart2 },
+  { name: 'Insights', href: '/insights', icon: BarChart2 }
 ]
 
 export function Sidebar() {
