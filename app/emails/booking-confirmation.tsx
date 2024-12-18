@@ -32,7 +32,7 @@ export const BookingConfirmationEmail = ({
       <Preview>Booking Confirmation: {serviceName} with {providerName}</Preview>
       <Body style={main}>
         <Container style={container}>
-          <Heading style={h1}>Booking Confirmation</Heading>
+          <Heading style={h1}>Booking Confirmation with {providerName}</Heading>
           <Text style={greeting}>Dear {customerName},</Text>
           <Text style={text}>
             Thank you for choosing our services. Your appointment has been successfully confirmed. Please review the details below:

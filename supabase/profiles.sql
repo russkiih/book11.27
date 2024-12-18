@@ -7,6 +7,7 @@ create table
     avatar_url text null,
     created_at timestamp with time zone null default now(),
     updated_at timestamp with time zone null default now(),
+    about text null,
     constraint profiles_pkey primary key (id),
     constraint profiles_username_key unique (username),
     constraint profiles_id_fkey foreign key (id) references auth.users (id) on delete cascade

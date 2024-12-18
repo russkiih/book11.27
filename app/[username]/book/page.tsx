@@ -1,79 +1,85 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { notFound } from 'next/navigation'
 import BookingForm from './BookingForm'
 
-export default async function BookPage({ params }: { params: { username: string } }) {
-  const supabase = createServerComponentClient({ cookies })
+export default async function BookPage({ 
+  params: { username } 
+}: { 
+  params: { username: string } 
+}) {
+  // Create the Supabase client with proper cookie handling
+  const supabase = createServerComponentClient({
+    cookies: cookies
+  })
   
-  // Fetch initial data
-  const { data: userData, error: userError } = await supabase
-    .from('profiles')
-    .select('id, email')
-    .eq('username', params.username)
-    .single()
-
-  if (userError || !userData) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Provider Not Found</h1>
-          <p className="mt-2 text-gray-600">The provider you're looking for doesn't exist.</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Fetch services and availability
-  const [
-    { data: servicesData },
-    { data: weekdayData },
-    { data: hoursData }
-  ] = await Promise.all([
-    supabase
-      .from('services')
-      .select('*')
-      .eq('user_id', userData.id)
-      .order('name'),
-    supabase
-      .from('weekday_availability')
-      .select('weekdays')
-      .eq('user_id', userData.id)
-      .single(),
-    supabase
-      .from('hours_availability')
-      .select('hours')
-      .eq('user_id', userData.id)
+  try {
+    // Fetch initial data
+    const { data: userData, error: userError } = await supabase
+      .from('profiles')
+      .select('id, email, full_name')
+      .eq('username', username)
       .single()
-  ])
 
-  if (!servicesData?.length) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">No Services Available</h1>
-          <p className="mt-2 text-gray-600">This provider hasn't set up any services yet.</p>
+    if (userError || !userData) {
+      notFound()
+    }
+
+    // Fetch services and availability
+    const [
+      { data: servicesData },
+      { data: weekdayData },
+      { data: hoursData }
+    ] = await Promise.all([
+      supabase
+        .from('services')
+        .select('*')
+        .eq('user_id', userData.id)
+        .order('name'),
+      supabase
+        .from('weekday_availability')
+        .select('weekdays')
+        .eq('user_id', userData.id)
+        .single(),
+      supabase
+        .from('hours_availability')
+        .select('hours')
+        .eq('user_id', userData.id)
+        .single()
+    ])
+
+    if (!servicesData?.length) {
+      return (
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">No Services Available</h1>
+            <p className="mt-2 text-gray-600">This provider hasn't set up any services yet.</p>
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  if (!weekdayData?.weekdays?.length || !hoursData?.hours?.length) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">No Availability Set</h1>
-          <p className="mt-2 text-gray-600">This provider hasn't set their availability yet.</p>
+    if (!weekdayData?.weekdays?.length || !hoursData?.hours?.length) {
+      return (
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900">No Availability Set</h1>
+            <p className="mt-2 text-gray-600">This provider hasn't set their availability yet.</p>
+          </div>
         </div>
-      </div>
-    )
-  }
+      )
+    }
 
-  return (
-    <BookingForm 
-      initialServices={servicesData} 
-      provider={userData}
-      availableWeekdays={weekdayData.weekdays}
-      availableHours={hoursData.hours}
-    />
-  )
+    return (
+      <BookingForm 
+        initialServices={servicesData} 
+        provider={userData}
+        availableWeekdays={weekdayData.weekdays}
+        availableHours={hoursData.hours}
+      />
+    )
+  } catch (error) {
+    console.error('Error in BookPage:', error)
+    notFound()
+  }
 } 

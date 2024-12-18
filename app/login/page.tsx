@@ -42,7 +42,7 @@ export default function AuthPage() {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: `${window.location.origin}/login/callback`,
             data: {
               username: username.toLowerCase()
             }

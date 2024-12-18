@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         datetime: booking.booking_datetime,
         duration: booking.duration,
         price: booking.price,
-        providerName: booking.profiles?.username || 'Our Team',
+        providerName: booking.profiles?.full_name || 'Our Team',
       }),
     })
 
