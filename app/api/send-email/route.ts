@@ -12,41 +12,75 @@ export async function POST(request: Request) {
     
     const supabase = createRouteHandlerClient({ cookies })
     
-    const { data: booking } = await supabase
+    console.log('Processing booking ID:', bookingId)
+    
+    // First get the booking with service info
+    const { data: booking, error: bookingError } = await supabase
       .from('bookings')
-      .select('*, services(name)')
+      .select(`
+        *,
+        services(name)
+      `)
       .eq('id', bookingId)
       .single()
 
+    if (bookingError) {
+      console.error('Error fetching booking:', bookingError)
+      return NextResponse.json({ error: 'Failed to fetch booking' }, { status: 500 })
+    }
+
     if (!booking) {
+      console.error('No booking found for ID:', bookingId)
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
     }
 
-    await resend.emails.send({
-      from: 'Booking Confirmation <bookings@resend.dev>',
-      to: booking.customer_email,
-      subject: 'Booking Confirmation',
-      react: BookingConfirmationEmail({
-        customerName: booking.customer_name,
-        serviceName: booking.services?.name || 'Service',
-        datetime: booking.booking_datetime,
-        duration: booking.duration,
-        price: booking.price,
-        providerName: booking.profiles?.full_name || 'Our Team',
-      }),
-    })
+    // Then get the provider's profile
+    const { data: providerProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', booking.provider_id)
+      .single()
 
-    return NextResponse.json({ success: true })
+    if (profileError) {
+      console.error('Error fetching provider profile:', profileError)
+    }
+
+    console.log('Booking data:', JSON.stringify(booking, null, 2))
+    console.log('Provider profile:', JSON.stringify(providerProfile, null, 2))
+
+    try {
+      const emailResponse = await resend.emails.send({
+        from: 'Booking Confirmation <bookings@resend.dev>',
+        to: booking.customer_email,
+        subject: 'Booking Confirmation',
+        react: BookingConfirmationEmail({
+          customerName: booking.customer_name,
+          serviceName: booking.services?.name || 'Service',
+          datetime: booking.booking_datetime,
+          duration: booking.duration,
+          price: booking.price,
+          providerName: providerProfile?.full_name || 'Our Team',
+        }),
+      })
+
+      console.log('Email sent successfully:', emailResponse)
+      return NextResponse.json({ success: true })
+    } catch (emailError) {
+      console.error('Error sending email:', emailError)
+      return NextResponse.json(
+        { error: 'Failed to send email', details: emailError },
+        { status: 500 }
+      )
+    }
   } catch (error) {
-    console.error('Email error:', error)
+    console.error('Unexpected error:', error)
     return NextResponse.json(
-      { error: 'Failed to send email' },
+      { error: 'Internal server error', details: error },
       { status: 500 }
     )
   }
 }
 
-// Add CORS headers
 export async function OPTIONS(request: Request) {
   return NextResponse.json({}, { status: 200 })
 } 

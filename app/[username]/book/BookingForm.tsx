@@ -82,15 +82,21 @@ export default function BookingForm({
 
   const sendConfirmationEmail = async (bookingId: string) => {
     try {
+      console.log('Attempting to send confirmation email for booking:', bookingId)
       const response = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bookingId }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Failed to send confirmation email')
+        console.error('Email API error:', data)
+        throw new Error(data.error || 'Failed to send confirmation email')
       }
+
+      console.log('Email API response:', data)
     } catch (error) {
       console.error('Email error:', error)
       // Don't throw the error, just log it
