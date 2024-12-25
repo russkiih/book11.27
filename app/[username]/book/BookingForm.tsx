@@ -250,7 +250,7 @@ export default function BookingForm({
                             setSelectedDate(undefined)
                             setSelectedTime('')
                           }}
-                          className="mt-3 text-sm font-medium text-green-700 hover:text-green-600 dark:text-green-300 dark:hover:text-green-200"
+                          className="mt-3 text-sm font-medium text-green-700 hover:text-green-600 dark:text-green-300 dark:hover:text-green-200 rounded-full px-4 py-2 border border-green-700 dark:border-green-300"
                         >
                           Book Another Appointment
                         </button>

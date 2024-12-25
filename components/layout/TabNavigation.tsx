@@ -7,8 +7,6 @@ import { usePathname } from "next/navigation"
 
 const tabs = [
   { name: 'Upcoming', href: '/bookings/upcoming' },
-  { name: 'Unconfirmed', href: '/bookings/unconfirmed' },
-  { name: 'Recurring', href: '/bookings/recurring' },
   { name: 'Past', href: '/bookings/past' },
   { name: 'Canceled', href: '/bookings/canceled' },
 ]
@@ -34,13 +32,6 @@ export function TabNavigation() {
           </Link>
         ))}
       </nav>
-      <button 
-        type="button"
-        className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-accent"
-      >
-        <Filter className="h-4 w-4" />
-        Filters
-      </button>
     </div>
   )
 } 

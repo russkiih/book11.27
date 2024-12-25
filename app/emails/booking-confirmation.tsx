@@ -26,6 +26,8 @@ export const BookingConfirmationEmail = ({
   providerName,
   price,
 }: BookingConfirmationEmailProps) => {
+  const formattedDateTime = format(new Date(datetime), "MMMM do, yyyy 'at' hh:mm aaa");
+
   return (
     <Html>
       <Head />
@@ -46,7 +48,7 @@ export const BookingConfirmationEmail = ({
               <span style={detailValue}>{providerName}</span>
               <br />
               <strong style={detailLabel}>Date & Time:</strong>{' '}
-              <span style={detailValue}>{datetime}</span>
+              <span style={detailValue}>{formattedDateTime}</span>
               <br />
               <strong style={detailLabel}>Duration:</strong>{' '}
               <span style={detailValue}>{duration} minutes</span>
