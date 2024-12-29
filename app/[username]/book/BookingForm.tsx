@@ -74,10 +74,25 @@ export default function BookingForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }))
+    if (name === 'phone') {
+      // Remove any non-digit characters
+      let phoneNumber = value.replace(/\D/g, '')
+      
+      // Ensure it starts with '+1' for US numbers
+      if (phoneNumber && !phoneNumber.startsWith('+')) {
+        phoneNumber = `+1${phoneNumber}`
+      }
+      
+      setFormData((prev) => ({
+        ...prev,
+        phone: phoneNumber
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value
+      }))
+    }
   }
 
   const sendConfirmationEmail = async (bookingId: string) => {
@@ -103,6 +118,56 @@ export default function BookingForm({
     }
   }
 
+  const sendConfirmationSMS = async (bookingId: string) => {
+    if (!bookingId) {
+      console.error('No booking ID provided for SMS')
+      throw new Error('No booking ID provided for SMS')
+    }
+
+    try {
+      console.log('Starting SMS send process for booking:', bookingId)
+      
+      const requestBody = { bookingId }
+      console.log('SMS request payload:', requestBody)
+
+      const response = await fetch('/api/send-sms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(requestBody),
+      }).catch((fetchError: Error) => {
+        console.error('Fetch failed:', fetchError)
+        throw fetchError
+      })
+
+      console.log('SMS API response status:', response.status)
+      const data = await response.json().catch((jsonError: Error) => {
+        console.error('JSON parse failed:', jsonError)
+        throw jsonError
+      })
+      
+      console.log('SMS API complete response:', data)
+
+      if (!response.ok) {
+        const errorMessage = data.error || 'Failed to send confirmation SMS'
+        console.error('SMS API error:', { status: response.status, data })
+        throw new Error(errorMessage)
+      }
+
+      console.log('SMS sent successfully:', data)
+      return data
+    } catch (error) {
+      console.error('SMS error details:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
+      throw error
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -112,6 +177,7 @@ export default function BookingForm({
     }
 
     try {
+      console.log('Form data being submitted:', formData)
       const dateTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')} ${selectedTime}`).toISOString()
 
       // First create the booking
@@ -132,15 +198,33 @@ export default function BookingForm({
         .select()
         .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
       if (bookingData) {
+        console.log('Booking created successfully:', bookingData)
         setBookingSuccess(true)
-        toast.success('Booking submitted successfully!')
         
-        // Send email in the background
-        sendConfirmationEmail(bookingData.id)
-          .catch(console.error) // Handle any errors silently
+        try {
+          console.log('Starting notifications process...')
+          // Send email and SMS in parallel
+          const [emailResult, smsResult] = await Promise.all([
+            sendConfirmationEmail(bookingData.id),
+            sendConfirmationSMS(bookingData.id)
+          ])
+          
+          console.log('All notifications sent:', { emailResult, smsResult })
+          toast.success('Booking submitted successfully!')
+        } catch (error) {
+          console.error('Notification error details:', {
+            error,
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          })
+          toast.error('Booking created but failed to send notifications')
+        }
         
         // Reset form
         setFormData({
@@ -153,7 +237,11 @@ export default function BookingForm({
         router.refresh()
       }
     } catch (error) {
-      console.error('Error submitting booking:', error)
+      console.error('Submission error details:', {
+        error,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      })
       toast.error('Failed to submit booking. Please try again.')
     }
   }
@@ -337,10 +425,15 @@ export default function BookingForm({
                             id="phone"
                             name="phone"
                             required
+                            placeholder="(555) 555-5555"
+                            pattern="^\+?1?\d{10,}$"
                             className="mt-1 w-full rounded-md border bg-background px-3 py-2"
                             value={formData.phone}
                             onChange={handleInputChange}
                           />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            US phone number (10 digits)
+                          </p>
                         </div>
                         <div>
                           <label htmlFor="notes" className="block text-sm font-medium">

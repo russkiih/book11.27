@@ -17,10 +17,10 @@ export default function AvailabilityPage() {
         <div className="w-full lg:w-64 space-y-4">
           <div className="rounded-lg border bg-card p-4">
             <h2 className="font-medium mb-2">Time Zone</h2>
-            <select className="w-full rounded-md border bg-background px-3 py-2">
-              <option>America/New_York</option>
-              <option>Europe/London</option>
-              <option>Asia/Tokyo</option>
+            <select className="w-full rounded-md border bg-background px-3 py-2" defaultValue="America/New_York">
+              <option value="America/New_York">EST (Eastern Time)</option>
+              <option value="UTC">UTC (Coordinated Universal Time)</option>
+              <option value="America/Los_Angeles">PST (Pacific Time)</option>
             </select>
           </div>
           <div className="rounded-lg border bg-card p-4">
