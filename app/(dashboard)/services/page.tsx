@@ -181,74 +181,76 @@ export default function ServicesPage() {
   }
 
   if (loading) {
-    return <div className="flex justify-center py-8">Loading...</div>
+    return <div className="flex items-center justify-center p-4">Loading...</div>
   }
 
   return (
     <div className="flex flex-col pr-4">
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Services</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage your available services
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            setEditingService(null)
-            setFormData({ name: '', description: '', duration: 30, price: 0 })
-            setIsModalOpen(true)
-          }}
-          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4" />
-          Add Service
-        </button>
+      <div className="mb-4">
+        <h1 className="text-2xl font-semibold">Services</h1>
+        <p className="text-sm text-muted-foreground">
+          Manage your service offerings and pricing
+        </p>
       </div>
 
-      {/* Services List */}
-      <div className="grid gap-4">
-        {services.map((service) => (
-          <div
-            key={service.id}
-            className="flex items-center justify-between rounded-lg border bg-card p-4"
+      <div className="rounded-lg border bg-card">
+        <div className="p-4">
+          <button
+            type="button"
+            onClick={() => {
+              setEditingService(null)
+              setFormData({ name: '', description: '', duration: 30, price: 0 })
+              setIsModalOpen(true)
+            }}
+            className="mb-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            <div>
-              <h3 className="font-medium">{service.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                {service.description}
-              </p>
-              <div className="mt-1 flex gap-4 text-sm text-muted-foreground">
-                <span>{service.duration} min</span>
-                <span>${service.price}</span>
+            <Plus className="h-4 w-4" /> Add Service
+          </button>
+
+          {/* Services List */}
+          <div className="grid gap-4">
+            {services.map((service) => (
+              <div
+                key={service.id}
+                className="flex items-center justify-between rounded-lg border bg-card p-4"
+              >
+                <div>
+                  <h3 className="font-medium">{service.name}</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {service.description}
+                  </p>
+                  <div className="mt-1 flex gap-4 text-sm text-muted-foreground">
+                    <span>{service.duration} min</span>
+                    <span>${service.price}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(service)}
+                    className="rounded-md p-2 hover:bg-accent"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(service)}
+                    className="rounded-md p-2 hover:bg-accent"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(service.id)}
+                    className="rounded-md p-2 text-destructive hover:bg-accent"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleCopy(service)}
-                className="rounded-md p-2 hover:bg-accent"
-              >
-                <Copy className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleEdit(service)}
-                className="rounded-md p-2 hover:bg-accent"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(service.id)}
-                className="rounded-md p-2 text-destructive hover:bg-accent"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
 
       {/* Modal */}

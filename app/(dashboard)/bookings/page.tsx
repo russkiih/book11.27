@@ -3,11 +3,10 @@
 import * as React from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { TabNavigation } from '@/components/layout/TabNavigation'
-import { NotificationPrompt } from '@/components/features/NotificationPrompt'
 import { EmptyState } from '@/components/features/EmptyState'
 import { format, parseISO, isPast, formatDistanceToNow } from 'date-fns'
-import { Filter, ArrowUpDown, Clock } from 'lucide-react'
-import { usePathname, useRouter } from 'next/navigation'
+import { Filter, ArrowUpDown, Clock, ChevronLeft, ChevronRight } from 'lucide-react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 
 interface Booking {
   id: string
@@ -56,6 +55,8 @@ const sortOptions: SortOption[] = [
 
 type TabType = 'upcoming' | 'past' | 'canceled'
 
+const ITEMS_PER_PAGE = 10
+
 export default function BookingsPage() {
   const [bookings, setBookings] = React.useState<Booking[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -64,6 +65,8 @@ export default function BookingsPage() {
   const [selectedSort, setSelectedSort] = React.useState<SortOption>(sortOptions[0])
   const pathname = usePathname()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const currentPage = Number(searchParams.get('page')) || 1
   const currentTab = pathname.split('/').pop() as TabType || 'upcoming'
   const supabase = createClientComponentClient()
 
@@ -153,6 +156,19 @@ export default function BookingsPage() {
     }
   }, [bookings, selectedSort, currentTab])
 
+  const paginatedBookings = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredBookings.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [filteredBookings, currentPage])
+
+  const totalPages = Math.ceil(filteredBookings.length / ITEMS_PER_PAGE)
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams)
+    params.set('page', page.toString())
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center p-4">Loading...</div>
   }
@@ -239,56 +255,114 @@ export default function BookingsPage() {
     }
   }
 
+  const renderPagination = () => {
+    if (totalPages <= 1) return null
+
+    const maxVisiblePages = 5
+    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+    return (
+      <div className="mt-6 flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+
+        {startPage > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => handlePageChange(1)}
+              className={`flex h-8 w-8 items-center justify-center rounded-md border ${
+                currentPage === 1 ? 'bg-primary text-primary-foreground' : ''
+              }`}
+            >
+              1
+            </button>
+            {startPage > 2 && <span className="px-2">...</span>}
+          </>
+        )}
+
+        {Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
+          <button
+            type="button"
+            key={page}
+            onClick={() => handlePageChange(page)}
+            className={`flex h-8 w-8 items-center justify-center rounded-md border ${
+              currentPage === page ? 'bg-primary text-primary-foreground' : ''
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+
+        {endPage < totalPages && (
+          <>
+            {endPage < totalPages - 1 && <span className="px-2">...</span>}
+            <button
+              type="button"
+              onClick={() => handlePageChange(totalPages)}
+              className={`flex h-8 w-8 items-center justify-center rounded-md border ${
+                currentPage === totalPages ? 'bg-primary text-primary-foreground' : ''
+              }`}
+            >
+              {totalPages}
+            </button>
+          </>
+        )}
+
+        <button
+          type="button"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col pr-4">
       <div className="mb-4">
         <h1 className="text-2xl font-semibold">Bookings</h1>
         <p className="text-sm text-muted-foreground">
-          Manage your event bookings and scheduling
+          Manage and track your customer bookings
         </p>
       </div>
-      <NotificationPrompt />
-      <TabNavigation />
-      <div className="mt-4 flex justify-between items-center">
-        <h2 className="text-lg font-semibold">{getTabTitle()}</h2>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowSortDropdown(!showSortDropdown)}
-            className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-accent"
-          >
-            <ArrowUpDown className="h-4 w-4" />
-            {selectedSort.label}
-          </button>
-          {showSortDropdown && (
-            <div className="absolute right-0 mt-2 w-48 rounded-md border bg-card shadow-lg">
-              <div className="p-1">
-                {sortOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      setSelectedSort(option)
-                      setShowSortDropdown(false)
-                    }}
-                    className={`flex w-full items-center px-3 py-2 text-sm hover:bg-accent ${
-                      selectedSort.value === option.value ? 'bg-accent' : ''
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+
+      <div className="rounded-lg border bg-card">
+        <div className="p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <TabNavigation />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSortDropdown(!showSortDropdown)}
+                className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+                Sort
+              </button>
             </div>
-          )}
+          </div>
+          <div className="mt-4">
+            {filteredBookings.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <>
+                {renderBookingList(paginatedBookings)}
+                {renderPagination()}
+              </>
+            )}
+          </div>
         </div>
-      </div>
-      <div className="mt-4">
-        {filteredBookings.length === 0 ? (
-          <EmptyState />
-        ) : (
-          renderBookingList(filteredBookings)
-        )}
       </div>
     </div>
   )
