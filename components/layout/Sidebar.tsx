@@ -17,6 +17,7 @@ import { usePathname } from "next/navigation"
 import { ViewPublicPageButton } from './ViewPublicPageButton'
 
 const navigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: Layout },
   { name: 'Bookings', href: '/bookings', icon: Calendar },
   { name: 'Services', href: '/services', icon: Scissors },
   { name: 'Availability', href: '/availability', icon: Clock },
@@ -24,8 +25,7 @@ const navigation = [
   { name: 'Teams', href: '/teams', icon: Users },
   { name: 'Apps', href: '/apps', icon: Settings },
   { name: 'Routing Forms', href: '/routing-forms', icon: FileText },
-  { name: 'Workflows', href: '/workflows', icon: Workflow },
-  { name: 'Insights', href: '/insights', icon: BarChart2 }
+  { name: 'Workflows', href: '/workflows', icon: Workflow }
 ]
 
 export function Sidebar() {
@@ -34,7 +34,9 @@ export function Sidebar() {
   return (
     <div className="flex h-screen w-64 flex-col bg-card">
       <div className="flex h-14 items-center border-b px-4">
-        <span className="text-lg font-semibold">Event Dashboard</span>
+        <Link href="/dashboard" className="text-lg font-semibold hover:text-primary">
+          Event Dashboard
+        </Link>
       </div>
       <nav className="flex-1 space-y-1 px-2 py-4">
         {navigation.map((item) => {
