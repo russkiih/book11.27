@@ -1,80 +1,67 @@
-'use client'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { InsightsDisplay } from './components/InsightsDisplay'
+import { startOfMonth, endOfMonth } from 'date-fns'
 
-import { BarChart2, Calendar, Clock, Users } from 'lucide-react'
+async function getBookingMetrics() {
+  const supabase = createServerComponentClient({ cookies })
+  
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  // Get total bookings
+  const { count: totalBookings } = await supabase
+    .from('bookings')
+    .select('*', { count: 'exact' })
+    .eq('provider_id', user?.id)
 
-const metrics = [
-  {
-    name: 'Total Bookings',
-    value: '1,234',
-    change: '+12.3%',
-    icon: Calendar,
-  },
-  {
-    name: 'Active Users',
-    value: '567',
-    change: '+5.6%',
-    icon: Users,
-  },
-  {
-    name: 'Avg. Duration',
-    value: '45m',
-    change: '-2.3%',
-    icon: Clock,
-  },
-  {
-    name: 'Completion Rate',
-    value: '94.2%',
-    change: '+1.2%',
-    icon: BarChart2,
-  },
-]
+  // Get unique customers this month
+  const startDate = startOfMonth(new Date())
+  const endDate = endOfMonth(new Date())
+  const { data: monthlyCustomers } = await supabase
+    .from('bookings')
+    .select('customer_email')
+    .eq('provider_id', user?.id)
+    .gte('booking_datetime', startDate.toISOString())
+    .lte('booking_datetime', endDate.toISOString())
+  
+  const uniqueCustomers = new Set(monthlyCustomers?.map(b => b.customer_email)).size
 
-export default function InsightsPage() {
-  return (
-    <div className="flex flex-col pr-4">
-      <div className="mb-4">
-        <h1 className="text-2xl font-semibold">Insights</h1>
-        <p className="text-sm text-muted-foreground">
-          Analytics and reporting for your bookings
-        </p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => {
-          const Icon = metric.icon
-          const isPositive = metric.change.startsWith('+')
-          return (
-            <div
-              key={metric.name}
-              className="rounded-lg border bg-card p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="rounded-md bg-primary/10 p-2">
-                  <Icon className="h-5 w-5 text-primary" />
-                </div>
-                <div
-                  className={`text-sm font-medium ${
-                    isPositive ? 'text-green-500' : 'text-red-500'
-                  }`}
-                >
-                  {metric.change}
-                </div>
-              </div>
-              <div className="mt-3">
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  {metric.name}
-                </h3>
-                <p className="text-2xl font-semibold">{metric.value}</p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-      <div className="mt-4 rounded-lg border bg-card p-4">
-        <h2 className="mb-4 font-medium">Booking Trends</h2>
-        <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-          Chart placeholder - Add your preferred charting library
-        </div>
-      </div>
-    </div>
-  )
+  // Get average duration
+  const { data: durationData } = await supabase
+    .from('bookings')
+    .select('duration')
+    .eq('provider_id', user?.id)
+  
+  const avgDuration = durationData?.length 
+    ? Math.round(durationData.reduce((acc, curr) => acc + curr.duration, 0) / durationData.length)
+    : 0
+
+  // Get total revenue
+  const { data: revenueData } = await supabase
+    .from('bookings')
+    .select('price')
+    .eq('provider_id', user?.id)
+
+  const totalRevenue = revenueData?.reduce((acc, curr) => acc + (curr.price || 0), 0) || 0
+
+  // Get monthly booking trends
+  const { data: monthlyBookings } = await supabase
+    .from('bookings')
+    .select('booking_datetime, price')
+    .eq('provider_id', user?.id)
+    .order('booking_datetime', { ascending: true })
+
+  return {
+    totalBookings,
+    uniqueCustomers,
+    avgDuration,
+    totalRevenue,
+    monthlyBookings
+  }
+}
+
+export default async function InsightsPage() {
+  const metrics = await getBookingMetrics()
+  return <InsightsDisplay metrics={metrics} />
 } 
