@@ -17,16 +17,16 @@ interface Profile {
 }
 
 interface MetricsData {
-  totalBookings: number
-  uniqueCustomers: number
-  avgDuration: number
-  totalRevenue: number
-  monthlyBookings: Booking[]
+  totalBookings: number | null
+  uniqueCustomers: number | null
+  avgDuration: number | null
+  totalRevenue: number | null
+  monthlyBookings: Booking[] | null
 }
 
 interface DashboardDisplayProps {
-  profile: Profile
-  metrics: MetricsData
+  profile: Profile | null
+  metrics: MetricsData 
 }
 
 export function DashboardDisplay({ profile, metrics }: DashboardDisplayProps) {
@@ -53,7 +53,7 @@ export function DashboardDisplay({ profile, metrics }: DashboardDisplayProps) {
     },
     {
       name: 'Total Revenue',
-      value: `$${metrics.totalRevenue.toLocaleString()}`,
+      value: `$${metrics.totalRevenue?.toLocaleString() || '0'}`,
       icon: DollarSign,
       description: 'Total earnings'
     },
@@ -102,7 +102,7 @@ export function DashboardDisplay({ profile, metrics }: DashboardDisplayProps) {
                   {metric.name}
                 </h3>
                 <p className="text-2xl font-semibold">{metric.value}</p>
-                <p className="mt-1 text-sm text-gray-500">{metric.description}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{metric.description}</p>
               </div>
             </Card>
           )
@@ -130,8 +130,8 @@ export function DashboardDisplay({ profile, metrics }: DashboardDisplayProps) {
                   type="monotone"
                   dataKey="bookings"
                   stackId="1"
-                  stroke="#8884d8"
-                  fill="#8884d8"
+                  stroke="hsl(142.1 76.2% 36.3%)"
+                  fill="hsl(142.1 76.2% 36.3%)"
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -144,14 +144,14 @@ export function DashboardDisplay({ profile, metrics }: DashboardDisplayProps) {
             <button 
               type="button"
               onClick={() => router.push('/availability')}
-              className="w-full rounded-lg bg-purple-600 px-4 py-2 text-white hover:bg-purple-700"
+              className="w-full rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
             >
               Set Availability
             </button>
             <button 
               type="button"
               onClick={() => router.push('/settings')}
-              className="w-full rounded-lg bg-gray-100 px-4 py-2 text-gray-700 hover:bg-gray-200"
+              className="w-full rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/90"
             >
               Update Profile
             </button>
