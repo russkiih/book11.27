@@ -78,8 +78,8 @@ export default function BookingForm({
       // Remove any non-digit characters
       let phoneNumber = value.replace(/\D/g, '')
       
-      // Ensure it starts with '+1' for US numbers
-      if (phoneNumber && !phoneNumber.startsWith('+')) {
+      // Only add +1 if it's exactly 10 digits and doesn't already have a country code
+      if (phoneNumber.length === 10 && !value.includes('+')) {
         phoneNumber = `+1${phoneNumber}`
       }
       
