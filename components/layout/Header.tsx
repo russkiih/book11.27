@@ -4,7 +4,7 @@ import { Bell, Search, LogOut } from "lucide-react"
 import Image from "next/image"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 
@@ -18,8 +18,22 @@ export function Header() {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
 
   useEffect(() => {
     const getUser = async () => {
@@ -63,7 +77,7 @@ export function Header() {
         <button type="button" className="rounded-md p-2 hover:bg-accent">
           <Bell className="h-5 w-5" />
         </button>
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setShowDropdown(!showDropdown)}
@@ -77,9 +91,9 @@ export function Header() {
             </Avatar>
           </button>
           {showDropdown && (
-            <div className="absolute right-0 mt-2 w-48 rounded-md border bg-card shadow-lg">
+            <div className="absolute right-0 mt-2 min-w-[12rem] w-auto rounded-md border bg-card shadow-lg">
               <div className="p-2">
-                <div className="px-3 py-2 text-sm text-muted-foreground">
+                <div className="px-3 py-2 text-sm text-muted-foreground whitespace-normal">
                   {user?.email}
                 </div>
                 <button

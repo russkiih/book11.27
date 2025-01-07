@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart2, Calendar, Clock, Users, DollarSign } from 'lucide-react'
+import { BarChart2, Calendar, Clock, Users, DollarSign, Scissors, FileText } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { format, startOfWeek, endOfWeek, eachWeekOfInterval, subWeeks } from 'date-fns'
 import { useRouter } from 'next/navigation'
@@ -143,8 +143,22 @@ export function DashboardDisplay({ profile, metrics }: DashboardDisplayProps) {
           <div className="space-y-2">
             <button 
               type="button"
-              onClick={() => router.push('/availability')}
+              onClick={() => router.push('/bookings')}
               className="w-full rounded-lg bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
+            >
+              View Bookings
+            </button>
+            <button 
+              type="button"
+              onClick={() => router.push('/services')}
+              className="w-full rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/90"
+            >
+              Manage Services
+            </button>
+            <button 
+              type="button"
+              onClick={() => router.push('/availability')}
+              className="w-full rounded-lg bg-secondary px-4 py-2 text-secondary-foreground hover:bg-secondary/90"
             >
               Set Availability
             </button>

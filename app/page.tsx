@@ -1,26 +1,27 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { BarChart2, Calendar, Users, ArrowRight } from 'lucide-react'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 z-0" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 relative z-10">
+      <div className="relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
           <div className="text-center">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              Grow Your Beauty Business
-              <span className="text-purple-600 block">Effortlessly</span>
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+              Streamline Your
+              <span className="text-purple-600"> Beauty Business</span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-              Streamline your bookings, manage clients, and expand your beauty business 
-              with our all-in-one platform designed for beauty professionals.
+              The all-in-one platform for beauty professionals to manage bookings, 
+              clients, and grow their business.
             </p>
-            <div className="flex justify-center">
+            <div className="flex justify-center gap-4">
               <Link href="/login">
-                <Button size="lg" variant="default">
-                  Get Started
+                <Button size="lg" className="gap-2">
+                  Get Started <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
             </div>
@@ -29,58 +30,35 @@ export default function LandingPage() {
       </div>
 
       {/* Features Section */}
-      <div className="py-16 bg-white">
+      <div className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            <FeatureCard 
-              title="Online Booking"
-              description="Let clients book appointments 24/7 through your personalized booking page"
-              icon="📅"
-            />
-            <FeatureCard 
-              title="Client Management"
-              description="Keep track of client history, preferences, and appointments in one place"
-              icon="👥"
-            />
-            <FeatureCard 
-              title="Business Growth"
-              description="Analytics and insights to help you make data-driven decisions"
-              icon="📈"
-            />
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <Calendar className="h-12 w-12 text-purple-600 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Online Booking</h3>
+              <p className="text-gray-600">
+                24/7 appointment scheduling through your personalized booking page
+              </p>
+            </Card>
+            
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <Users className="h-12 w-12 text-purple-600 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Client Management</h3>
+              <p className="text-gray-600">
+                Centralized client history, preferences, and appointment tracking
+              </p>
+            </Card>
+            
+            <Card className="p-6 hover:shadow-lg transition-shadow">
+              <BarChart2 className="h-12 w-12 text-purple-600 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Business Analytics</h3>
+              <p className="text-gray-600">
+                Data-driven insights to help your business grow and succeed
+              </p>
+            </Card>
           </div>
         </div>
       </div>
-
-      {/* CTA Section */}
-      <div className="bg-purple-50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Ready to Transform Your Beauty Business?
-          </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Join thousands of beauty professionals who are growing their business with us.
-          </p>
-          <Link href="/login">
-            <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
-              Get Started Now
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function FeatureCard({ title, description, icon }: { 
-  title: string
-  description: string
-  icon: string 
-}) {
-  return (
-    <div className="p-6 rounded-lg border border-gray-200 hover:shadow-lg transition-shadow">
-      <div className="text-4xl mb-4">{icon}</div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
     </div>
   )
 }
