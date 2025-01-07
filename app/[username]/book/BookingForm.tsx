@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Database } from '@/types/supabase'
 import { Clock, Calendar } from 'lucide-react'
@@ -48,13 +48,17 @@ interface BookingFormProps {
   provider: Provider
   availableWeekdays: number[]
   availableHours: number[]
+  hoursPerDay: Record<string, number[]>
+  availability: Record<string, { enabled: boolean; timeRange: { start: string; end: string } }>
 }
 
 export default function BookingForm({
   initialServices,
   provider,
   availableWeekdays,
-  availableHours
+  availableHours,
+  hoursPerDay,
+  availability
 }: BookingFormProps) {
   const [services] = useState<Service[]>(initialServices)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
@@ -69,6 +73,36 @@ export default function BookingForm({
   const [bookingSuccess, setBookingSuccess] = useState(false)
   const router = useRouter()
   const supabase = createClientComponentClient<Database>()
+
+  // Get available time slots based on selected date
+  const getTimeSlots = useCallback((date: Date) => {
+    const dayOfWeek = date.getDay().toString()
+    if (!availability[dayOfWeek]?.enabled) return []
+
+    const { start, end } = availability[dayOfWeek].timeRange
+    const startHour = Number.parseInt(start.split(':')[0], 10)
+    const endHour = Number.parseInt(end.split(':')[0], 10)
+
+    return Array.from(
+      { length: endHour - startHour },
+      (_, i) => {
+        const hour = startHour + i
+        return hour < 12 
+          ? `${hour}:00 AM`
+          : `${hour === 12 ? 12 : hour - 12}:00 PM`
+      }
+    )
+  }, [availability])
+
+  // Update time slots when date changes
+  useEffect(() => {
+    if (selectedDate) {
+      const slots = getTimeSlots(selectedDate)
+      if (!slots.includes(selectedTime)) {
+        setSelectedTime('')
+      }
+    }
+  }, [selectedDate, selectedTime, getTimeSlots])
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -248,8 +282,8 @@ export default function BookingForm({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="mx-auto max-w-4xl px-4 py-8">
-        <div className="mb-8 text-center">
+      <div className="space-y-8">
+        <div className="text-center">
           <h1 className="text-3xl font-bold">Book an Appointment with {provider.full_name}</h1>
           <p className="mt-2 text-muted-foreground">
             Select a service and time to book your appointment
@@ -365,18 +399,18 @@ export default function BookingForm({
                     <div className="rounded-lg border bg-card p-6">
                       <h3 className="mb-4 font-medium">Select a Time</h3>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {availableHours.map((hour) => (
+                        {getTimeSlots(selectedDate).map((time) => (
                           <button
-                            key={hour}
+                            key={time}
                             type="button"
-                            onClick={() => setSelectedTime(`${hour.toString().padStart(2, '0')}:00`)}
+                            onClick={() => setSelectedTime(time)}
                             className={`rounded-md border px-4 py-2 text-sm ${
-                              selectedTime === `${hour.toString().padStart(2, '0')}:00`
+                              selectedTime === time
                                 ? 'border-primary bg-primary/10 text-primary'
                                 : 'hover:border-primary hover:bg-primary/5'
                             }`}
                           >
-                            {format(new Date().setHours(hour, 0, 0, 0), 'h:mm a')}
+                            {time}
                           </button>
                         ))}
                       </div>

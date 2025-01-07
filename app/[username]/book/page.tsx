@@ -38,22 +38,24 @@ export default async function BookPage({
         .order('name'),
       supabase
         .from('weekday_availability')
-        .select('weekdays')
+        .select('weekdays, availability')
         .eq('user_id', userData.id)
         .single(),
       supabase
         .from('hours_availability')
-        .select('hours')
+        .select('hours, hours_per_day')
         .eq('user_id', userData.id)
         .single()
     ])
 
     if (!servicesData?.length) {
       return (
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">No Services Available</h1>
-            <p className="mt-2 text-gray-600">This provider hasn't set up any services yet.</p>
+        <div className="container max-w-4xl mx-auto p-6">
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900">No Services Available</h1>
+              <p className="mt-2 text-gray-600">This provider hasn't set up any services yet.</p>
+            </div>
           </div>
         </div>
       )
@@ -61,22 +63,28 @@ export default async function BookPage({
 
     if (!weekdayData?.weekdays?.length || !hoursData?.hours?.length) {
       return (
-        <div className="flex min-h-[60vh] items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">No Availability Set</h1>
-            <p className="mt-2 text-gray-600">This provider hasn't set their availability yet.</p>
+        <div className="container max-w-4xl mx-auto p-6">
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900">No Availability Set</h1>
+              <p className="mt-2 text-gray-600">This provider hasn't set their availability yet.</p>
+            </div>
           </div>
         </div>
       )
     }
 
     return (
-      <BookingForm 
-        initialServices={servicesData} 
-        provider={userData}
-        availableWeekdays={weekdayData.weekdays}
-        availableHours={hoursData.hours}
-      />
+      <div className="container max-w-4xl mx-auto p-6">
+        <BookingForm 
+          initialServices={servicesData} 
+          provider={userData}
+          availableWeekdays={weekdayData.weekdays}
+          availableHours={hoursData.hours}
+          hoursPerDay={hoursData.hours_per_day}
+          availability={weekdayData.availability}
+        />
+      </div>
     )
   } catch (error) {
     console.error('Error in BookPage:', error)
