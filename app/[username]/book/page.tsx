@@ -17,7 +17,7 @@ export default async function BookPage({
     // Fetch initial data
     const { data: userData, error: userError } = await supabase
       .from('profiles')
-      .select('id, email, full_name')
+      .select('id, email, full_name, avatar_url')
       .eq('username', username)
       .single()
 
@@ -75,7 +75,16 @@ export default async function BookPage({
     }
 
     return (
-      <div className="container max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="flex flex-col items-center mb-4">
+          {userData.avatar_url && (
+            <img 
+              src={userData.avatar_url} 
+              alt={`${userData.full_name}'s avatar`}
+              className="w-24 h-24 rounded-full mb-2 object-cover border-2 border-gray-200"
+            />
+          )}
+        </div>
         <BookingForm 
           initialServices={servicesData} 
           provider={userData}

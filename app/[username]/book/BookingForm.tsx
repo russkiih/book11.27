@@ -284,7 +284,7 @@ export default function BookingForm({
     <div className="min-h-screen bg-background">
       <div className="space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Book an Appointment with {provider.full_name}</h1>
+          <h1 className="text-3xl font-bold">Book Time with {provider.full_name}</h1>
           <p className="mt-2 text-muted-foreground">
             Select a service and time to book your appointment
           </p>
